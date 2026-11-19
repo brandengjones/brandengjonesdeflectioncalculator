@@ -1,0 +1,5 @@
+validation_case,span_ft,member,E_ksi,Ix_in4,Sx_in3,load_description,expected_reaction_kips,expected_max_moment_kip_ft,expected_max_deflection_in,tolerance
+uniformly_loaded_w12x26,20,W12x26,29000,204,33.4,1 kip/ft across full span,10.0,50.0,0.609,0.002
+center_point_loaded_w12x26,20,W12x26,29000,204,33.4,10 kip at 10 ft,10.0,50.0,0.485,0.002
+cantilever_uniform_w12x26,10,W12x26,29000,204,33.4,1 kip/ft across full cantilever,10.0,50.0,0.366,0.002
+short_simply_supported_point,10,W10x12,29000,53.8,12.6,12 kip at 3 ft,8.4,25.2,0.195,0.010

@@ -1,0 +1,15 @@
+beam_case,beam_type,span_ft,member_type,designation,steel_fy_ksi,steel_allowable_bending_ksi,steel_allowable_shear_ksi,steel_E_ksi,steel_Ix_in4,steel_Sx_in3,steel_A_in2,steel_tw_in,steel_d_in,load_type,load_magnitude,load_unit,point_position_ft,uniform_start_ft,uniform_end_ft,expected_reaction_kips,expected_max_moment_kipft,expected_max_deflection_in,deflection_limit_ratio
+w12_uniform_20,simply_supported,20,steel,W12x26,50,33,20,29000,204,33.4,7.65,0.23,12.2,uniform,1,kip_per_ft,,,1,10.0,50.0,0.609,360
+w12_point_center,simply_supported,20,steel,W12x26,50,33,20,29000,204,33.4,7.65,0.23,12.2,point,10,kips,10,,,10.0,50.0,0.485,360
+w12_cantilever_uniform, cantilever,10,steel,W12x26,50,33,20,29000,204,33.4,7.65,0.23,12.2,uniform,1,kip_per_ft,,,1,,10.0,50.0,0.366,360
+w10_uniform_16,simply_supported,16,steel,W10x12,36,22,14.5,29000,53.8,12.6,3.54,0.19,9.87,uniform,0.75,kip_per_ft,,,1,6.0,24.0,0.496,360
+w16_point_24,simply_supported,24,steel,W16x26,50,33,20,29000,301,38.4,7.68,0.25,15.7,point,15,kips,12,,,15.0,180.0,0.565,360
+w14_uniform_18,simply_supported,18,steel,W14x22,50,33,20,29000,199,29,6.49,0.230,13.74,uniform,1.25,kip_per_ft,,,1,11.25,50.625,0.833,360
+w8_point_12,simply_supported,12,steel,W8x31,50,33,20,29000,110,27.5,9.13,0.285,8.00,point,8,kips,4,,,5.333,21.333,0.123,360
+w18_uniform_30,simply_supported,30,steel,W18x35,50,33,20,29000,510,57.6,10.3,0.300,17.7,uniform,0.5,kip_per_ft,,,1,7.5,56.25,0.253,360
+w12_cantilever_point,cantilever,8,steel,W12x26,50,33,20,29000,204,33.4,7.65,0.23,12.2,point,6,kips,8,,,6.0,48.0,0.079,360
+w10_short_point,simply_supported,10,steel,W10x12,36,22,14.5,29000,53.8,12.6,3.54,0.19,9.87,point,12,kips,3,,,8.4,25.2,0.195,360
+dfir_2x6_spruce,simply_supported,12,lumber,2x6-Spruce-2grade,0,0,0,1400,20.8,13.14,8.25,0.5,5.5,uniform,0.20,kip_per_ft,,,1,1.2,3.6,0.250,360
+dfir_2x8_spruce,cantilever,6,lumber,2x8-Spruce-1grade,0,0,0,1600,47.6,30.66,10.875,0.75,7.25,uniform,0.18,kip_per_ft,,,1,1.08,1.94,0.095,360
+dfir_2x10_doug,simply_supported,14,lumber,2x10-Douglas-Fir-2grade,0,0,0,1600,98.93,49.46,13.875,0.75,9.25,point,2.5,kips,7,,,2.5,17.5,0.508,360
+dfir_4x6_hemfir,simply_supported,8,lumber,4x6-Hem-Fir-1grade,0,0,0,1300,88.5,46.83,19.25,1.5,5.5,uniform,0.30,kip_per_ft,,,1,1.2,2.4,0.074,360

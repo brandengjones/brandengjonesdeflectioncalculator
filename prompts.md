@@ -1,0 +1,26 @@
+# Prompts
+
+- **Request:** Set up the project folders and top-level files; add short README files and document the layout and file-placement rules.
+- **Changed:** Created `AGENTS.md`, `spec.md`, `index.html`, `prompts.md`, and the numbered folder structure with README files.
+- **Result:** Worked.
+- **Request:** Review the initial plan in `spec.md` and recommend improvements without writing code.
+- **Changed:** No project files or code were changed; prepared a specification review.
+- **Result:** Worked; the plan was reviewed and recommendations were provided without code changes.
+- **Request:** Follow the recommendations and update the specification.
+- **Changed:** Expanded `spec.md` with beam properties, load inputs, calculations, ASD checks, shear and bearing checks, out-of-scope limits, validation cases, and error handling. No application code was written.
+- **Result:** Worked.
+- **Request:** Add example data for the beam app.
+- **Changed:** Created `01_data/beam_examples.csv` with steel W12x26 properties and three repeatable beam-loading cases.
+- **Result:** Worked.
+- **Request:** Expand the example data and build the complete working beam app.
+- **Changed:** Added more steel, lumber, and beam-loading examples to `01_data/beam_examples.csv`, and implemented the complete single-file app in `index.html` with inputs, calculations, diagrams, checks, presets, validation, and responsive styling.
+- **Result:** Worked.
+- **Request:** Stack the diagrams vertically underneath the main beam.
+- **Changed:** Made the shear, moment, and deflection diagrams a single-column stack at all screen sizes in `index.html`.
+- **Result:** Worked.
+- **Request:** Show beam deflection as values are entered and update it from the inputs.
+- **Changed:** Added a deflected-shape overlay to the beam sketch and live recalculation for load, span, and custom-member inputs.
+- **Result:** Worked; browser testing confirmed live load updates (doubling the sample uniform load doubled deflection) and the deflected shape is rendered.
+- **Request:** Publish the app to the provided GitHub repository.
+- **Changed:** Initialized an independent Git repository in `Beam_App` and staged only this project’s files for the empty public repository.
+- **Result:** In progress; publishing and Pages activation are pending.

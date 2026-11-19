@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beam Designer</title>
+  <style>
+    :root {
+      --navy:#102a43; --blue:#1976d2; --blue-dark:#155ca1; --ink:#243b53;
+      --muted:#627d98; --line:#d9e2ec; --surface:#fff; --canvas:#f4f7fb;
+      --green:#197a56; --green-bg:#e8f5ef; --red:#b42318; --red-bg:#feeceb;
+      --amber:#9a6700; --amber-bg:#fff4d6; --shadow:0 12px 32px rgba(16,42,67,.10);
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--canvas); font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    header { background:linear-gradient(135deg,var(--navy),#1d4e79); color:white; padding:22px 28px; }
+    header h1 { margin:0 0 3px; font-size:24px; }
+    header p { margin:0; color:#d9eaf7; }
+    main { max-width:1500px; margin:auto; padding:22px; display:grid; grid-template-columns:330px minmax(0,1fr); gap:20px; }
+    .card { background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); }
+    .panel { padding:18px; }
+    .controls { grid-row:span 2; height:max-content; }
+    h2 { margin:0 0 14px; font-size:16px; color:var(--navy); }
+    h3 { margin:18px 0 8px; font-size:14px; color:var(--navy); }
+    label { display:block; margin:0 0 5px; color:var(--muted); font-size:12px; font-weight:700; }
+    input,select,button { width:100%; min-height:38px; border:1px solid #bcccdc; border-radius:6px; background:white; color:var(--ink); font:14px inherit; }
+    input,select { padding:8px 9px; }
+    input:focus,select:focus { outline:3px solid rgba(25,118,210,.16); border-color:var(--blue); }
+    .field { margin-bottom:12px; }
+    .two { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    button { cursor:pointer; border:0; background:var(--blue); color:white; font-weight:700; padding:8px 12px; }
+    button:hover { background:var(--blue-dark); }
+    button.secondary { background:#eaf1f8; color:var(--navy); border:1px solid var(--line); }
+    button.danger { background:var(--red-bg); color:var(--red); border:1px solid #f5c2bf; width:38px; min-width:38px; }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+    .load-row { display:grid; grid-template-columns:84px 65px 1fr 38px; gap:5px; align-items:end; margin-bottom:7px; }
+    .load-row .field { margin:0; }
+    .load-row input,.load-row select { min-height:34px; padding:6px; font-size:12px; }
+    .load-row .extra { grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+    .load-row .extra input { width:100%; }
+    .preset-wrap { display:flex; gap:6px; }
+    .preset-wrap select { flex:1; }
+    .preset-wrap button { width:70px; }
+    .error { color:var(--red); background:var(--red-bg); border:1px solid #f5c2bf; border-radius:6px; padding:8px; margin:10px 0; display:none; }
+    .summary { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
+    .metric { padding:13px; border:1px solid var(--line); border-radius:8px; background:white; }
+    .metric .name { color:var(--muted); font-size:12px; font-weight:700; }
+    .metric .value { color:var(--navy); font-size:20px; font-weight:800; margin-top:2px; }
+    .checks { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .check { border-radius:8px; padding:12px; border:1px solid var(--line); background:#f8fafc; }
+    .check.pass { background:var(--green-bg); border-color:#abd8c4; }
+    .check.fail { background:var(--red-bg); border-color:#f5c2bf; }
+    .check.na { background:var(--amber-bg); border-color:#efd99b; }
+    .badge { font-weight:800; font-size:12px; text-transform:uppercase; }
+    .check.pass .badge { color:var(--green); } .check.fail .badge { color:var(--red); } .check.na .badge { color:var(--amber); }
+    .diagram { margin-top:12px; padding:12px 14px; }
+    .diagram svg { display:block; width:100%; height:170px; }
+    .diagram.small svg { height:145px; }
+    .grid-diagrams { display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px; }
+    .grid-diagrams .diagram { margin:0; }
+    .details { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+    .details .card { padding:14px; }
+    .details ul { margin:7px 0 0; padding-left:18px; }
+    .member-fields { display:none; }
+    .member-fields.active { display:block; }
+    @media (max-width:1050px) { main { grid-template-columns:280px minmax(0,1fr); } .summary { grid-template-columns:1fr 1fr; } }
+    @media (max-width:760px) { main { grid-template-columns:1fr; } .controls { grid-row:auto; } .checks { grid-template-columns:1fr; } .details { grid-template-columns:1fr; } .summary { grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Beam Designer</h1>
+    <p>Statics, bending, shear, and deflection for determinate beams</p>
+  </header>
+  <main>
+    <aside class="card panel controls">
+      <h2>Beam setup</h2>
+      <div class="field">
+        <label for="preset">Example preset</label>
+        <div class="preset-wrap">
+          <select id="preset">
+            <option value="w_uniform">W12x26 uniform load</option>
+            <option value="w_point">W12x26 center point load</option>
+            <option value="w_cantilever">W12x26 cantilever</option>
+            <option value="w_mixed">Mixed simply supported loads</option>
+            <option value="lumber">2x10 lumber point load</option>
+          </select>
+          <button id="loadPreset" type="button">Load</button>
+        </div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="beamType">Support type</label><select id="beamType"><option value="simply">Simply supported</option><option value="cantilever">Cantilever</option></select></div>
+        <div class="field"><label for="span">Span (ft)</label><input id="span" type="number" min="0.1" step="0.1" value="20"></div>
+      </div>
+      <h3>Loads</h3>
+      <div id="loads"></div>
+      <button id="addLoad" class="secondary" type="button">+ Add load</button>
+
+      <h3>Member</h3>
+      <div class="field"><label for="memberType">Member type</label><select id="memberType"><option value="steel">Steel W-shape</option><option value="lumber">Lumber</option><option value="custom">Custom</option></select></div>
+      <div id="steelFields" class="member-fields active">
+        <div class="field"><label for="steelShape">W-shape</label><select id="steelShape"></select></div>
+      </div>
+      <div id="lumberFields" class="member-fields">
+        <div class="field"><label for="lumberShape">Lumber size</label><select id="lumberShape"></select></div>
+      </div>
+      <div id="customFields" class="member-fields">
+        <div class="two">
+          <div class="field"><label for="customE">E (ksi)</label><input id="customE" type="number" value="29000"></div>
+          <div class="field"><label for="customIx">Ix (in4)</label><input id="customIx" type="number" value="204"></div>
+          <div class="field"><label for="customSx">Sx (in3)</label><input id="customSx" type="number" value="33.4"></div>
+          <div class="field"><label for="customArea">Area (in2)</label><input id="customArea" type="number" value="7.65"></div>
+          <div class="field"><label for="customFb">Allow. Fb (ksi)</label><input id="customFb" type="number" value="33"></div>
+          <div class="field"><label for="customFv">Allow. Fv (ksi)</label><input id="customFv" type="number" value="20"></div>
+        </div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="deflectionRatio">Deflection limit</label><select id="deflectionRatio"><option value="360">L/360</option><option value="240">L/240</option><option value="180">L/180</option><option value="custom">Custom</option></select></div>
+        <div class="field"><label for="customRatio">Custom denominator</label><input id="customRatio" type="number" min="1" value="360"></div>
+      </div>
+      <div id="error" class="error" role="alert"></div>
+      <button id="calculate" type="button">Calculate beam</button>
+    </aside>
+
+    <section>
+      <div class="summary">
+        <div class="metric"><div class="name">Left reaction</div><div id="rLeft" class="value">—</div></div>
+        <div class="metric"><div class="name">Right reaction / fixed</div><div id="rRight" class="value">—</div></div>
+        <div class="metric"><div class="name">Maximum moment</div><div id="mMax" class="value">—</div></div>
+        <div class="metric"><div class="name">Maximum deflection</div><div id="dMax" class="value">—</div></div>
+      </div>
+      <div class="checks">
+        <div id="bendingCheck" class="check na"><div class="badge">Not calculated</div><div id="bendingText">Bending stress</div></div>
+        <div id="shearCheck" class="check na"><div class="badge">Not calculated</div><div id="shearText">Shear stress</div></div>
+        <div id="deflectionCheck" class="check na"><div class="badge">Not calculated</div><div id="deflectionText">Deflection</div></div>
+      </div>
+      <div class="card diagram" id="beamCard"><h2>Beam and loads</h2><svg id="beamSketch" role="img" aria-label="Beam sketch with exaggerated deflected shape"></svg></div>
+      <div class="grid-diagrams">
+        <div class="card diagram small"><h2>Shear diagram</h2><svg id="shearChart" role="img" aria-label="Shear diagram"></svg></div>
+        <div class="card diagram small"><h2>Moment diagram</h2><svg id="momentChart" role="img" aria-label="Moment diagram"></svg></div>
+        <div class="card diagram small"><h2>Deflection diagram</h2><svg id="deflectionChart" role="img" aria-label="Deflection diagram"></svg></div>
+      </div>
+      <div class="details">
+        <div class="card"><h2>Member properties</h2><div id="memberDetails">No member selected.</div></div>
+        <div class="card"><h2>Assumptions and limits</h2>
+          <ul>
+            <li>ASD allowable stress checks; strong-axis bending only.</li>
+            <li>Steel uses \(E=29,000\) ksi and assumes lateral bracing.</li>
+            <li>No beam self-weight unless it is entered as a load.</li>
+            <li>No lateral-torsional buckling, axial force, torsion, or continuous-beam analysis.</li>
+            <li>Calculation aid only; verify with applicable codes and professional judgment.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+  "strict";
+  const steelCatalog = {
+    "W8x31": {Fy:50,Fb:33,Fv:20,E:29000,Ix:110,Sx:27.5,A:9.13,d:8.00,tw:0.285,bf:8.00,tf:0.435},
+    "W10x12": {Fy:36,Fb:22,Fv:14.5,E:29000,Ix:53.8,Sx:12.6,A:3.54,d:9.87,tw:0.190,bf:3.96,tf:0.210},
+    "W12x26": {Fy:50,Fb:33,Fv:20,E:29000,Ix:204,Sx:33.4,A:7.65,d:12.2,tw:0.230,bf:6.49,tf:0.380},
+    "W14x22": {Fy:50,Fb:33,Fv:20,E:29000,Ix:199,Sx:29.0,A:6.49,d:13.74,tw:0.230,bf:5.000,tf:0.335},
+    "W16x26": {Fy:50,Fb:33,Fv:20,E:29000,Ix:301,Sx:38.4,A:7.68,d:15.7,tw:0.250,bf:5.50,tf:0.345},
+    "W18x35": {Fy:50,Fb:33,Fv:20,E:29000,Ix:510,Sx:57.6,A:10.3,d:17.7,tw:0.300,bf:6.00,tf:0.425},
+    "W21x44": {Fy:50,Fb:33,Fv:20,E:29000,Ix:843,Sx:81.6,A:13.0,d:20.7,tw:0.350,bf:6.50,tf:0.450},
+    "W24x55": {Fy:50,Fb:33,Fv:20,E:29000,Ix:1350,Sx:114,A:16.3,d:23.6,tw:0.395,bf:7.01,tf:0.505},
+    "W27x84": {Fy:50,Fb:33,Fv:20,E:29000,Ix:2850,Sx:213,A:24.7,d:26.7,tw:0.460,bf:9.96,tf:0.640},
+    "W30x90": {Fy:50,Fb:33,Fv:20,E:29000,Ix:3610,Sx:245,A:26.4,d:29.5,tw:0.470,bf:10.00,tf:0.610},
+    "W33x118": {Fy:50,Fb:33,Fv:20,E:29000,Ix:5900,Sx:359,A:34.7,d:32.9,tw:0.550,bf:11.5,tf:0.740},
+    "W36x150": {Fy:50,Fb:33,Fv:20,E:29000,Ix:9040,Sx:504,A:44.2,d:35.9,tw:0.625,bf:12.0,tf:0.940}
+  };
+  const lumberCatalog = {
+    "2x4-DFL-Select": {name:"Douglas Fir-Larch 2x4 Select Structural",E:1900,Fb:1.9,Fv:0.18,Fc:0.625,Ix:5.36,Sx:3.56,A:5.25,d:3.5,tw:1.5},
+    "2x6-Spruce-2": {name:"Spruce-Pine-Fir 2x6 No. 2",E:1400,Fb:0.875,Fv:0.135,Fc:0.425,Ix:20.8,Sx:13.14,A:8.25,d:5.5,tw:1.5},
+    "2x8-Spruce-1": {name:"Spruce-Pine-Fir 2x8 No. 1",E:1600,Fb:1.150,Fv:0.135,Fc:0.425,Ix:47.6,Sx:30.66,A:10.875,d:7.25,tw:1.5},
+    "2x10-Douglas-Fir-2": {name:"Douglas Fir-Larch 2x10 No. 2",E:1600,Fb:1.0,Fv:0.180,Fc:0.625,Ix:98.93,Sx:49.46,A:13.875,d:9.25,tw:1.5},
+    "2x12-Douglas-Fir-1": {name:"Douglas Fir-Larch 2x12 No. 1",E:1600,Fb:1.25,Fv:0.180,Fc:0.625,Ix:178.0,Sx:75.02,A:16.875,d:11.25,tw:1.5},
+    "4x6-Hem-Fir-1": {name:"Hem-Fir 4x6 No. 1",E:1300,Fb:1.05,Fv:0.150,Fc:0.410,Ix:88.5,Sx:46.83,A:19.25,d:5.5,tw:3.5},
+    "6x8-Douglas-Fir-1": {name:"Douglas Fir-Larch 6x8 Select",E:1800,Fb:1.5,Fv:0.180,Fc:0.625,Ix:725,Sx:141,A:38.25,d:7.5,tw:5.5},
+    "Glulam-5.125x12": {name:"Douglas Fir Glulam 5.125x12",E:1800,Fb:2.40,Fv:0.300,Fc:0.750,Ix:738,Sx:123,A:61.5,d:12,tw:5.125}
+  };
+  const presets = {
+    w_uniform:{beamType:"simply",span:20,memberType:"steel",member:"W12x26",loads:[{type:"uniform",magnitude:1,start:0,end:20}]},
+    w_point:{beamType:"simply",span:20,memberType:"steel",member:"W12x26",loads:[{type:"point",magnitude:10,position:10}]},
+    w_cantilever:{beamType:"cantilever",span:10,memberType:"steel",member:"W12x26",loads:[{type:"uniform",magnitude:1,start:0,end:10}]},
+    w_mixed:{beamType:"simply",span:20,memberType:"steel",member:"W12x26",loads:[{type:"uniform",magnitude:0.5,start:5,end:15},{type:"point",magnitude:8,position:15}]},
+    lumber:{beamType:"simply",span:14,memberType:"lumber",member:"2x10-Douglas-Fir-2",loads:[{type:"point",magnitude:2.5,position:7}]}
+  };
+  const $ = id => document.getElementById(id);
+  function populateCatalogs() {
+    $("steelShape").innerHTML = Object.keys(steelCatalog).map(k=>`<option value="${k}">${k}</option>`).join("");
+    $("lumberShape").innerHTML = Object.entries(lumberCatalog).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+  }
+  function addLoad(load={type:"point",magnitude:10,position:10,start:0,end:20}) {
+    const div=document.createElement("div"); div.className="load-row";
+    div.innerHTML=`<div class="field"><label>Type</label><select class="load-type"><option value="point">Point</option><option value="uniform">Uniform</option></select></div>
+      <div class="field"><label>Mag. (kip)</label><input class="magnitude" type="number" step="0.01" value="${load.magnitude||0}"></div>
+      <div class="extra">
+        <div><label class="position-label">Position (ft)</label><input class="position" type="number" step="0.1" value="${load.position??10}"></div>
+        <div class="uniform-range" style="display:none"><label>Start–end (ft)</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:3px"><input class="start" type="number" step="0.1" value="${load.start??0}"><input class="end" type="number" step="0.1" value="${load.end??$("span").value}"></div></div>
+      </div>
+      <button class="danger remove" type="button" aria-label="Remove load">×</button>`;
+    $("loads").appendChild(div);
+    const type=div.querySelector(".load-type"), pos=div.querySelector(".position"), range=div.querySelector(".uniform-range"), posLabel=div.querySelector(".position-label");
+    type.value=load.type;
+    function typeChanged(){const u=type.value==="uniform";range.style.display=u?"block":"none";pos.style.display=u?"none":"block";posLabel.style.display=u?"none":"block";}
+    type.addEventListener("change",typeChanged); typeChanged();
+    div.querySelector(".remove").addEventListener("click",()=>{div.remove();calculate();});
+  }
+  function readLoads() {
+    return [...document.querySelectorAll(".load-row")].map(row=>{
+      const type=row.querySelector(".load-type").value;
+      return type==="point"
+        ? {type,magnitude:+row.querySelector(".magnitude").value,position:+row.querySelector(".position").value}
+        : {type,magnitude:+row.querySelector(".magnitude").value,start:+row.querySelector(".start").value,end:+row.querySelector(".end").value};
+    });
+  }
+  function selectedMember() {
+    const type=$("memberType").value;
+    if(type==="steel") {
+      const key=$("steelShape").value,m=steelCatalog[key]; return {...m,type:"steel",name:key};
+    }
+    if(type==="lumber") {
+      const key=$("lumberShape").value,m=lumberCatalog[key]; return { ...m,type:"lumber",name:m.name,tw:m.tw,d:m.d };
+    }
+    return {type:"custom",name:"Custom member",E:+$("customE").value,Ix:+$("customIx").value,Sx:+$("customSx").value,A:+$("customArea").value,Fb:+$("customFb").value,Fv:+$("customFv").value,d:10,tw:0.25};
+  }
+  function setMemberFields() {
+    const type=$("memberType").value;
+    ["steelFields","lumberFields","customFields"].forEach(id=>$(id).classList.remove("active"));
+    $(type==="steel"?"steelFields":type==="lumber"?"lumberFields":"customFields").classList.add("active");
+  }
+  function validate(span,loads) {
+    if(!Number.isFinite(span)||span<=0) return "Span must be greater than zero.";
+    if(loads.length===0) return "Add at least one load.";
+    for(const load of loads) {
+      if(!Number.isFinite(load.magnitude)||load.magnitude===0) return "Every load magnitude must be a nonzero number.";
+      if(load.type==="point") {
+        if(!Number.isFinite(load.position)||load.position<0||load.position>span) return "Point load positions must be from 0 to the span.";
+      } else {
+        if(!Number.isFinite(load.start)||!Number.isFinite(load.end)||load.start<0||load.end>span||load.end<=load.start) return "Uniform loads must have a start before an end within the span.";
+      }
+    }
+    return "";
+  }
+  function getMemberAndRatio() {
+    const member=selectedMember();
+    const ratio=$("deflectionRatio").value==="custom"?+$("customRatio").value:+$("deflectionRatio").value;
+    if(!Number.isFinite(ratio)||ratio<1) throw new Error("Deflection denominator must be at least 1.");
+    if(!member.E||!member.Ix||!member.Sx) throw new Error("The selected member is missing required properties.");
+    return {member,ratio};
+  }
+  function analyze() {
+    $("error").style.display="none";
+    const spanFt=+$("span").value, span=spanFt*12, loads=readLoads();
+    const err=validate(spanFt,loads); if(err){$("error").textContent=err;$("error").style.display="block";return null;}
+    let member,ratio;try{({member,ratio}=getMemberAndRatio());}catch(e){$("error").text=e.message;$("error").style.display="block";return null;}
+    const n=401,h=span/(n-1),x=[],V=[],M=[];
+    if($("beamType").value==="simply") {
+      let momentNumerator=0,total=0;
+      loads.forEach(l=>{
+        if(l.type==="point"){const p=l.magnitude*1000,a=l.position*12;momentNumerator+=p*(span-a);total+=p;}
+        else {const w=l.magnitude*1000/12,c=l.start*12,d=l.end*12,W=w*(d-c);const centroid=(c+d)/2;momentNumerator+=W*(span-centroid);total+=W;}
+      });
+      const RLeft=momentNumerator/(span*1000), RRight=total/1000-RLeft;
+      for(let i=0;i<n;i++){
+        const xi=i*h;let v=RLeft*1000,m=RLeft*1000*xi;
+        loads.forEach(l=>{
+          if(l.type==="point"){const p=l.magnitude*1000,a=l.position*12;if(xi>=a){v-=p;m-=p*(xi-a);}}
+          else {const w=l.magnitude*1000/12,c=l.start*12,d=l.end*12;const cc=Math.max(0,Math.min(d,xi)-c);if(cc>0){v-=w*cc;m-=w*cc*(xi-(c+cc/2));}}
+        });
+        x.push(xi/12);V.push(v/1000);M.push(m/1000/12);
+      }
+      const EI=member.E*member.Ix, D=[];
+      const rhs=M.map(m=>m*12/EI*h*h),lower=new Array(n-2).fill(1),upper=new Array(n-2).fill(1),diag=new Array(n-2).fill(-2),b=rhs.slice(1,-1);
+      for(let i=0;i<n-2;i++){diag[i]=-2;}
+      for(let i=1;i<n-2;i++){lower[i]=1;}
+      for(let i=0;i<n-3;i++){upper[i]=1;}
+      for(let i=1;i<n-2;i++){const factor=lower[i]/diag[i-1];diag[i]-=factor*upper[i-1];b[i]-=factor*b[i-1];}
+      const y=new Array(n-2);y[n-3]=b[n-3]/diag[n-3];
+      for(let i=n-4;i>=0;i--)y[i]=(b[i]-upper[i]*y[i+1])/diag[i];
+      D[0]=0;for(let i=1;i<n-1;i++)D[i]=y[i-1];D[n-1]=0;
+      D.forEach((v,i)=>D[i]=v);
+      return {spanFt,span,x,V,M,D,member,ratio,kind:"simply",RLeft,RRight:RRight};
+    }
+    let fixed=0,shearAtFix=0;
+    loads.forEach(l=>{
+      if(l.type==="point"){const p=l.magnitude*1000,a=l.position*12;fixed+=p*a/12/1000;shearAtFix+=l.magnitude;}
+      else {const w=l.magnitude/12*1000,c=l.start*12,d=l.end*12,load=w*(d-c)/1000,f=c/12+(d-c)/24;fixed+=load*f;shearAtFix+=w*(d-c)/1000;}
+    });
+    const D=[];
+    for(let i=0;i<n;i++){
+      const xi=i*h;let v=-0,m=-0;
+      loads.forEach(l=>{
+        if(l.type==="point"){const p=l.magnitude*1000,a=l.position*12;if(a>=xi){v-=p;m-=p*(a-xi)/1000/12;}}
+        else {const w=l.magnitude*1000/12,c=l.start*12,d=l.end*12;const right=Math.max(c,xi),length=Math.max(0,d-right);if(length>0){v-=w*length;m-=w*length*( (right+length/2)-xi)/1000/12;}}
+      });
+      if(i===0) v=-shearAtFix*1000;
+      x.push(xi/12);V.push(v/1000);M.push(m);
+    }
+    let EI=member.E*member.Ix,y=0,slope=0,prevK=0;
+    for(let i=0;i<n;i++){
+      const curvature=M[i]*12/EI;
+      if(i===0){D.push(0);prevK=curvature;continue;}
+      slope+=0.5*(prevK+curvature)*h;
+      y+=0.5*(slope+ (slope-0.5*(prevK+curvature)*h))*h;
+      D.push(y);prevK=curvature;
+    }
+    D[0]=0;
+    let integratedY=0,integratedSlope=0,prev= M[0]*12/EI;
+    const corr=D.map((_,i)=>0);
+    for(let i=1;i<n;i++){const k=M[i]*12/EI;integratedSlope+=0.5*(prev+k)*h;integratedY+=0.5*( (i===1?0: (integratedSlope-0.5*(prev+k)*h)) + integratedSlope)*h;corr[i]=integratedY;prev=k;}
+    let maxIndex=0; for(let i=1;i<n;i++) if(Math.abs(corr[i])>Math.abs(corr[maxIndex])) maxIndex=i;
+    for(let i=0;i<n;i++) D[i]=corr[i];
+    return {spanFt,span,x,V,M,D,member,ratio,kind:"cantilever",RLeft:shearAtFix,RRight:fixed};
+  }
+  function maxAbs(arr){let v=arr[0]||0;for(const n of arr)if(Math.abs(n)>Math.abs(v))v=n;return v;}
+  function fmt(v,dec=2){return `${Math.abs(v)<0.0005?0:v.toFixed(dec)}`;}
+  function setCheck(id,badge,text,value) {
+    $(id).className=`check ${value}`;$(id).querySelector(".badge").textContent=value==="pass"?"PASS":value==="fail"?"FAIL":"NOT INCLUDED";$(text).textContent=valueText(text=value);
+  }
+  function valueText(value){return value;}
+  function svgText(svg,x,y,text,anchor="middle",fill="#627d98",size=11){const t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("text-anchor",anchor);t.setAttribute("fill",fill);t.setAttribute("font-size",size);t.textContent=text;svg.appendChild(t);}
+  function line(svg,x1,y1,x2,y2,color="#bcccdc",width=1,dash=""){const l=document.createElementNS("http://www.w3.org/2000/svg","line");l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);l.setAttribute("stroke",color);l.setAttribute("stroke-width",width);if(dash)l.setAttribute("stroke-dasharray",dash);svg.appendChild(l);}
+  function clearSvg(id){const s=$(id);while(s.firstChild)s.removeChild(s.firstChild);s.setAttribute("viewBox","0 0 600 170");}
+  function drawBeam(result) {
+    const svg=$("beamSketch");clearSvg("beamSketch");svg.setAttribute("viewBox","0 0 600 170");
+    line(svg,70,95,530,95,"#243b53",7);
+    if(result.kind==="cantilever"){
+      line(svg,70,55,70,135,"#243b53",12);
+      for(let y=58;y<138;y+=10)line(svg,54,y,70,y+16,"#627d98",2);
+    }else{
+      line(svg,70,95,70,125,"#1976d2",4);line(svg,530,95,530,125,"#1976d2",4);
+      [[70,125],[530,125]].forEach(p=>{line(svg,p[0]-16,p[1],p[0]+16,p[1],"#1976d2",4);line(svg,p[0]-12,p[1],p[0]+12,p[1]+12,"#1976d2",2);line(svg,p[0]+12,p[1],p[0]-12,p[1]+12,"#1976d2",2);});
+    }
+    const maxDeflection=Math.max(...result.D.map(Math.abs));
+    if(maxDeflection>0) {
+      const points=result.D.map((value,i)=>{
+        const px=70+(i/(result.D.length-1))*460;
+        const py=95+(Math.abs(value)/maxDeflection)*28;
+        return `${px},${py}`;
+      }).join(" ");
+      const curve=document.createElementNS("http://www.w3.org/2000/svg","polyline");
+      curve.setAttribute("points",points);curve.setAttribute("fill","none");curve.setAttribute("stroke","#197a56");curve.setAttribute("stroke-width","3");
+      svg.appendChild(curve);
+      line(svg,405,15,429,15,"#197a56",3);
+      svgText(svg,435,19,"Deflected shape (exaggerated)","start","#197a56",10);
+    }
+    readLoads().forEach(load=>{
+      if(load.type==="point"){const px=70+(load.position/result.spanFt)*460;line(svg,px,35,px,92,"#b42318",3);line(svg,px-7,43,px,35,"#b42318",3);line(svg,px+7,43,px,35,"#b42318",3);svgText(svg,px,27,`${load.magnitude} kip`,"middle","#b42318",11);}
+      else {const x1=70+(load.start/result.spanFt)*460,x2=70+(load.end/result.spanFt)*460;for(let x=x1;x<=x2;x+=20)line(svg,x,42,x,92,"#b42318",2);line(svg,x1,42,x2,42,"#b42318",3);svgText(svg,(x1+x2)/2,28,`${load.magnitude} kip/ft`,"middle","#b42318",11);}
+    });
+    svgText(svg,70,155,result.kind==="cantilever"?"Fixed":"Left", "middle");svgText(svg,530,155,result.kind==="cantilever"?`${result.spanFt} ft`:"Right","middle");svgText(svg,300,155,`${result.spanFt} ft`, "middle","#243b53",12);
+  }
+  function chart(id,values,xValues,unit,color) {
+    const svg=$(id);clearSvg(id);const w=600,h=170,l=48,r=18,t=20,b=28,pW=w-l-r,pH=h-t-b;
+    const max=Math.max(...values.map(Math.abs))||1,min=-max;
+    line(svg,l,t,l,h-b,"#829ab1",1);line(svg,l,h/2,w-r,h/2,"#bcccdc",1);
+    const pts=values.map((v,i)=>{const x=l+(i/(values.length-1))*pW;const y=t+(max-v)/(max-min)*pH;return `${x},${y}`}).join(" ");
+    const poly=document.createElementNS("http://www.w3.org/2000/svg","polyline");poly.setAttribute("points",pts);poly.setAttribute("fill","none");poly.setAttribute("stroke",color);poly.setAttribute("stroke-width","3");svg.appendChild(poly);
+    const maxV=Math.abs(maxAbs(values));svgText(svg,l,h-7,"0 ft","start","#627d98",10);svgText(svg,w-r,h-7,`${xValues[xValues.length-1].toFixed(0)} ft`,"end","#627d98",10);svgText(svg,w-r,13,`Max ${fmt(maxV,3)} ${unit}`,"end",color,11);
+  }
+  function updateCheck(id,textId,condition,actual,limit,unit) {
+    const el=$(id);el.className=`check ${condition?"pass":"fail"}`;el.querySelector(".badge").textContent=condition?"PASS":"FAIL";$(textId).textContent=`${actual} ${unit} / limit ${limit} ${unit}`;
+  }
+  function calculate() {
+    const result=analyze();if(!result)return;
+    const mMax=Math.abs(maxAbs(result.M)),vMax=Math.abs(maxAbs(result.V)),dMax=Math.abs(maxAbs(result.D));
+    $("rLeft").textContent=`${fmt(result.RLeft,2)} kip`;
+    $("rRight").textContent=result.kind==="simply"?`${fmt(result.RRight,2)} kip`:`${fmt(result.RRight,2)} kip-ft`;
+    $("mMax").textContent=`${fmt(mMax,2)} kip-ft`;
+    $("dMax").textContent=`${fmt(dMax,4)} in`;
+    const bending=result.member.type==="steel"?result.member.Fb:result.member.Fb;
+    const shear=result.member.type==="steel"?result.member.Fv:result.member.Fv;
+    if(!bending){updateCheck("bendingCheck","bendingText",true,"—","—","ksi");document.querySelector("#bendingCheck .badge").textContent="CUSTOM";}
+    else {
+      const fb=Math.abs(mMax)*12/result.member.Sx;
+      updateCheck("bendingCheck","bendingText",fb<=bending,fmt(fb,3),fmt(bending,3),"ksi");
+      $("bendingText").textContent=`${fmt(fb,3)} ksi / limit ${fmt(bending,3)} ksi`;
+    }
+    if(!shear){updateCheck("shearCheck","shearText",true,"—","—","ksi");document.querySelector("#shearCheck .badge").textContent="CUSTOM";}
+    else {
+      let fv;
+      if(result.member.type==="steel")fv=Math.abs(vMax*1000)/(result.member.tw*result.member.d);
+      else fv=1.5*Math.abs(vMax*1000)/(result.member.A);
+      updateCheck("shearCheck","shearText",fv<=shear,fv.toFixed(3),shear.toFixed(3),"ksi");
+    }
+    const limit=result.spanFt*12/result.ratio;
+    updateCheck("deflectionCheck","deflectionText",Math.abs(dMax)<=limit,fmt(dMax,4),fmt(limit,4),"in");
+    drawBeam(result);
+    chart("shearChart",result.V,result.x,"kip","#1976d2");
+    chart("momentChart",result.M,result.x,"kip-ft","#7c4dff");
+    chart("deflectionChart",result.D,result.x,"in","#197a56");
+    const details=[];
+    details.push(`<b>${result.member.name}</b>`);
+    details.push(`E = ${result.member.E} ksi`);
+    details.push(`Ix = ${result.member.Ix} in⁴`);
+    details.push(`Sx = ${result.member.Sx} in³`);
+    details.push(`Area = ${result.member.A} in²`);
+    if(result.member.type==="steel"){details.push(`Fy = ${result.member.Fy} ksi`);details.push(`Catalog values: educational approximation; verify against current AISC shapes database.`);}
+    if(result.member.type==="lumber"){details.push(`Allowable Fb = ${result.member.Fb} ksi`);details.push(`Allowable Fv = ${result.member.Fv} ksi`);details.push(`Property values require the selected NDS edition and adjustment factors.`);}
+    $("memberDetails").innerHTML=details.join("<br>");
+  }
+  function loadPreset(key) {
+    const p=presets[key];$("beamType").value=p.beamType;$("span").value=p.span;$("memberType").value=p.memberType;setMemberFields();
+    if(p.memberType==="steel")$("steelShape").value=p.member;else $("lumberShape").value=p.member;
+    $("loads").innerHTML="";
+    p.loads.forEach(addLoad);
+    calculate();
+  }
+  populateCatalogs();
+  $("addLoad").addEventListener("click",()=>{addLoad({type:"point",magnitude:5,position:+$("span").value/2});calculate();});
+  $("loads").addEventListener("input",calculate);
+  $("loads").addEventListener("change",calculate);
+  $("memberType").addEventListener("change",()=>{setMemberFields();calculate();});
+  ["span","customE","customIx","customSx","customArea","customFb","customFv","customRatio"].forEach(id=>$(id).addEventListener("input",calculate));
+  ["beamType","steelShape","lumberShape","deflectionRatio"].forEach(id=>$(id).addEventListener("change",calculate));
+  $("calculate").addEventListener("click",calculate);
+  $("loadPreset").addEventListener("click",()=>loadPreset($("preset").value));
+  loadPreset("w_uniform");
+  </script>
+</body>
+</html>
